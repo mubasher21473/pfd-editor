@@ -1,0 +1,11 @@
+{
+  "name": "pdf-object-editor",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "lint": "pnpm --filter web lint",
+    "type-check": "pnpm --filter web type-check",
+    "build": "pnpm --filter web build"
+  }
+}

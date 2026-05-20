@@ -1,0 +1,35 @@
+# Node
+node_modules/
+.pnpm-store/
+.next/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build / coverage
+coverage/
+.coverage
+*.lcov
+htmlcov/
+*.tsbuildinfo
+coverage.xml
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log

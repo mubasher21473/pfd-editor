@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pdfeditor_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
+      - run: ruff check apps/api/
+      - run: mypy apps/api/app
+      - name: Run tests
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost/pdfeditor_test
+          JWT_SECRET_KEY: test-secret
+          STORAGE_ENDPOINT_URL: http://localhost
+          STORAGE_ACCESS_KEY_ID: test
+          STORAGE_SECRET_ACCESS_KEY: test
+          STORAGE_BUCKET_NAME: test
+          STORAGE_PUBLIC_URL: http://localhost
+          REDIS_URL: redis://localhost:6379
+        run: pytest --cov=app --cov-report=xml
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web type-check
+      - run: pnpm --filter web build

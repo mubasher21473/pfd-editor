@@ -1,0 +1,18 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deployment
+        run: echo "Configure Vercel Git integration for automatic deploys on main."
+
+  deploy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger API deployment
+        run: echo "Configure Railway/Render deployment hooks and secrets for API/worker."
