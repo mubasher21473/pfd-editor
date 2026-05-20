@@ -64,6 +64,16 @@ export const api = {
         `/objects/${fileId}${objectType ? `?object_type=${encodeURIComponent(objectType)}` : ""}`,
         { token }
       ),
+    uploadImage: (fileId: string, objectId: string, imageFile: File, token?: string) => {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      formData.append("object_id", objectId);
+      return apiFetch<{ image_s3_key: string }>(`/objects/${fileId}/upload-image`, {
+        method: "POST",
+        body: formData,
+        token,
+      });
+    },
   },
   edits: {
     apply: (fileId: string, ops: EditOperation[], token?: string) =>

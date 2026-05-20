@@ -20,6 +20,12 @@ class SetFillColorOp(BaseModel):
     color: str
 
 
+class SetStrokeColorOp(BaseModel):
+    op: str = "set_stroke_color"
+    object_id: str
+    color: str
+
+
 class MoveOp(BaseModel):
     op: str = "move"
     object_id: str
@@ -44,6 +50,13 @@ class DeleteOp(BaseModel):
     object_id: str
 
 
+class ReplaceImageOp(BaseModel):
+    op: str = "replace_image"
+    object_id: str
+    xobject_name: str
+    image_s3_key: str
+
+
 class BulkEditIn(BaseModel):
     operations: list[dict[str, object]]
 
@@ -51,8 +64,8 @@ class BulkEditIn(BaseModel):
     @classmethod
     def validate_operations(cls, ops: list[dict[str, object]]) -> list[dict[str, object]]:
         supported = {
-            "replace_text", "set_font_size", "set_fill_color",
-            "move", "resize", "hide", "delete",
+            "replace_text", "set_font_size", "set_fill_color", "set_stroke_color",
+            "move", "resize", "hide", "delete", "replace_image",
         }
         for op in ops:
             if "object_id" not in op:
