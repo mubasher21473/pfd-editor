@@ -1,0 +1,720 @@
+================================================================================
+  SOFTWARE REQUIREMENTS SPECIFICATION
+  PDF Object Editor — Granular PDF Content Manipulation Platform
+================================================================================
+  Document Version  : 1.0.0
+  Status            : Draft
+  Prepared For      : Product & Engineering Team
+  Source Validation : Idearupt.ai — 10+ tracked complaints
+  Validation Score  : 7.8 / 10  |  Pain Level: 8.5 / 10
+  Est. MRR Potential: $10,000 – $50,000 / month
+  Date              : May 2025
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+  PART I   — Niche Idea Brief & Market Intelligence
+    1.1  Executive Summary
+    1.2  Niche Idea Validation
+    1.3  Problem Statement
+    1.4  Target Audience & Segments
+    1.5  Where the Audience Hangs Out
+    1.6  Competitor Landscape
+    1.7  Unique Differentiator (Niche Angle)
+
+  PART II  — Software Requirements Specification (SRS)
+    2.1  Document Purpose & Scope
+    2.2  Definitions & Acronyms
+    2.3  Product Overview
+    2.4  Functional Requirements
+         2.4.1  Core Upload & Parsing          (FR-001 to FR-010)
+         2.4.2  Object Selection & Filtering   (FR-011 to FR-020)
+         2.4.3  Object Editing Operations      (FR-021 to FR-035)
+         2.4.4  Export & Download              (FR-036 to FR-040)
+         2.4.5  User Account & Billing         (FR-041 to FR-045)
+    2.5  Non-Functional Requirements
+         2.5.1  Performance
+         2.5.2  Reliability & Availability
+         2.5.3  Security
+         2.5.4  Compatibility
+         2.5.5  Accessibility
+    2.6  System Architecture Overview
+    2.7  Tech Stack Recommendation
+    2.8  Data Flow
+    2.9  Out of Scope for v1.0
+
+  PART III — Go-To-Market & Business Model
+    3.1  Pricing Strategy
+    3.2  90-Day Launch Plan
+    3.3  Success Metrics (KPIs)
+    3.4  Risk Register
+
+  APPENDIX — Revision History
+
+
+================================================================================
+  PART I — NICHE IDEA BRIEF & MARKET INTELLIGENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+1.1  EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+
+PDF Object Editor is a precision web-based tool enabling professionals to
+manipulate individual text runs, vector paths, and image objects within existing
+PDF files — without converting to raster images, breaking font embedding, or
+losing vector fidelity.
+
+CORE VALUE PROPOSITION:
+  - Edit specific colored text or paths in a PDF without reimporting or
+    rasterizing.
+  - Delete, move, or recolor objects with attribute-level control (by color,
+    type, or layer).
+  - Preserve fonts, vector paths, and document structure throughout every
+    operation.
+  - No desktop install required — full precision in the browser.
+
+
+--------------------------------------------------------------------------------
+1.2  NICHE IDEA VALIDATION
+--------------------------------------------------------------------------------
+
+Sourced and validated through Idearupt.ai, an AI-powered startup intelligence
+platform tracking real user complaints across developer forums, Reddit, and
+Stack Overflow communities.
+
+  VALIDATION SCORECARD
+  +-----------------------------------+-----------+-----------------------------+
+  | Metric                            | Score     | Interpretation              |
+  +-----------------------------------+-----------+-----------------------------+
+  | Overall Validation Score          | 7.8 / 10  | Strong signal — worth build |
+  | Pain Level                        | 8.5 / 10  | High frustration in workflows|
+  | Trend Score                       | 6.0 / 10  | Steady demand, not hype     |
+  | Competition Level                 | 5.5 / 10  | Moderate — incumbents miss  |
+  | Revenue Potential                 | 8.0 / 10  | $10K–$50K MRR estimated     |
+  | Build Complexity                  | 6.8 / 10  | Moderate — PDF internals    |
+  +-----------------------------------+-----------+-----------------------------+
+
+  Additional Signals:
+  - 235 builders viewed on Idearupt
+  - 8 builders saved the idea
+  - 10+ complaints tracked across 3–5 communities
+  - Builder activity label: "Vocal Pain" + "Serious Build"
+
+
+--------------------------------------------------------------------------------
+1.3  PROBLEM STATEMENT
+--------------------------------------------------------------------------------
+
+PDF users — particularly designers, technical writers, and legal professionals —
+need to edit specific objects within PDF documents. Current tools fail in one of
+three ways:
+
+  1. RASTER CONVERSION
+     Tools like GIMP and Inkscape import PDFs as images, destroying vector
+     precision and preventing granular text edits.
+
+  2. FONT CORRUPTION
+     Scribus and LibreOffice mess up embedded fonts when reimporting, making
+     output unusable in professional contexts.
+
+  3. PAGE-LEVEL ONLY
+     Adobe Acrobat and Foxit manage page flow but cannot perform attribute-level
+     operations like "change all red text to black" or "delete all paths with
+     stroke color #FF0000".
+
+REAL USER PAIN — Verbatim Complaints (Stack Overflow, primary source):
+
+  "I want to change the color of all texts and paths with a specific color in
+   a PDF, or delete them, but no free tools satisfy me."
+   — Stack Overflow, 2+ upvotes, 4 comments
+
+  "Existing tools like GIMP and Inkscape import PDFs as images, and
+   Scribus/LibreOffice mess up fonts when importing text. Many PDF tools
+   manage pages, but none can manipulate objects like text boxes and paths
+   directly while preserving settings."
+   — Stack Overflow
+
+
+--------------------------------------------------------------------------------
+1.4  TARGET AUDIENCE & SEGMENTS
+--------------------------------------------------------------------------------
+
+  +----------------------+------------------------------------------------------+
+  | Segment              | Use Case                                             |
+  +----------------------+------------------------------------------------------+
+  | Graphic Designers    | Recolor or reposition branded elements in client     |
+  |                      | PDFs without a full redesign pass.                   |
+  +----------------------+------------------------------------------------------+
+  | Technical Writers    | Edit spec PDFs to update part numbers, callout text, |
+  |                      | or diagram labels without redrawing vector assets.   |
+  +----------------------+------------------------------------------------------+
+  | Legal Professionals  | Redact or replace specific text objects in contracts |
+  |                      | while maintaining formatting and signature readiness.|
+  +----------------------+------------------------------------------------------+
+  | DevOps / Automation  | Batch-process PDFs in CI/CD pipelines to strip       |
+  |                      | watermarks, normalize colors, or redact PII at      |
+  |                      | object level.                                        |
+  +----------------------+------------------------------------------------------+
+  | Print Production     | Fix individual prepress issues (wrong spot color,    |
+  |                      | missing bleed objects) without regenerating from     |
+  |                      | source files.                                        |
+  +----------------------+------------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+1.5  WHERE THE AUDIENCE HANGS OUT
+--------------------------------------------------------------------------------
+
+  - r/pdf              — direct community with active frustration threads
+  - r/graphic_design   — designers venting about client PDF workflows
+  - Stack Overflow     — "modify PDF text objects" tag, 79K+ questions [pdf]
+  - Product Hunt       — early adopter buyers for PDF tool launches
+  - Hacker News        — developer-adjacent builders processing PDFs
+                         programmatically
+
+
+--------------------------------------------------------------------------------
+1.6  COMPETITOR LANDSCAPE
+--------------------------------------------------------------------------------
+
+  +----------------------+------------------------+------------------------------+
+  | Tool                 | Strengths              | Critical Gap                 |
+  +----------------------+------------------------+------------------------------+
+  | Adobe Acrobat Pro DC | Industry standard,     | No attribute-based bulk ops; |
+  |                      | broad features         | expensive ($239/yr)          |
+  +----------------------+------------------------+------------------------------+
+  | Foxit PDF Editor Pro | Lightweight,           | Cannot select objects by     |
+  |                      | affordable             | color or type; no script API |
+  +----------------------+------------------------+------------------------------+
+  | PDF-XChange Editor   | Annotations, forms,    | Object manipulation limited  |
+  |                      | stamps                 | to page-level operations     |
+  +----------------------+------------------------+------------------------------+
+  | Inkscape (PDF import)| Free, open source,     | Imports entire page as group;|
+  |                      | vector                 | breaks font embedding        |
+  +----------------------+------------------------+------------------------------+
+  | Affinity Publisher   | Professional layout    | Designed for creation, not   |
+  |                      | tool                   | surgical editing of PDFs     |
+  +----------------------+------------------------+------------------------------+
+
+
+--------------------------------------------------------------------------------
+1.7  UNIQUE DIFFERENTIATOR (NICHE ANGLE)
+--------------------------------------------------------------------------------
+
+No existing tool offers all three of the following simultaneously:
+
+  1. Object-level selection by visual attribute (color, type, layer, size range)
+  2. Bulk operations across the entire document or selected pages
+  3. Zero font corruption — text objects remain as text, not converted to
+     outlines or images
+
+THE NICHE ANGLE IN ONE SENTENCE:
+  PDF Object Editor is the ONLY tool that lets you select all objects of a
+  specific color, type, or attribute across an entire PDF and transform them
+  in bulk — without converting your document to an image.
+
+
+================================================================================
+  PART II — SOFTWARE REQUIREMENTS SPECIFICATION (SRS)
+================================================================================
+
+--------------------------------------------------------------------------------
+2.1  DOCUMENT PURPOSE & SCOPE
+--------------------------------------------------------------------------------
+
+This SRS defines all functional requirements, non-functional requirements,
+system architecture, and success metrics for the PDF Object Editor v1.0 MVP.
+The document follows IEEE 830 SRS conventions and is intended for product
+managers, engineers, designers, and QA teams.
+
+  +-------------------------+--------------------------------------------------+
+  | Field                   | Value                                            |
+  +-------------------------+--------------------------------------------------+
+  | Document ID             | SRS-POE-001                                      |
+  | Version                 | 1.0.0                                            |
+  | Status                  | Draft — Awaiting Engineering Review              |
+  | Product Name            | PDF Object Editor                                |
+  | MVP Scope               | Web-based (SaaS), single-user, freemium model    |
+  | Out of Scope (v1)       | Desktop app, mobile clients, API-only access,    |
+  |                         | OCR, PDF creation from scratch                   |
+  +-------------------------+--------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+2.2  DEFINITIONS & ACRONYMS
+--------------------------------------------------------------------------------
+
+  PDF Object     — An atomic content element within a PDF: text run, image
+                   XObject, path, or form XObject.
+
+  Content Stream — PDF internal byte stream encoding drawing instructions
+                   for a page.
+
+  XObject        — Reusable PDF resource (image or form) referenced by pages.
+
+  Attribute      — A query parameter (e.g., fill color = #FF0000) used to
+  Filter           select objects.
+
+  SaaS           — Software as a Service — hosted web application.
+
+  MRR            — Monthly Recurring Revenue.
+
+  PDF/A          — ISO standard for archival PDFs — long-term preservation.
+
+  CMS            — Color Management System — manages color profiles.
+
+
+--------------------------------------------------------------------------------
+2.3  PRODUCT OVERVIEW
+--------------------------------------------------------------------------------
+
+PDF Object Editor is a browser-based SaaS tool. Users upload a PDF, the system
+parses and renders it with full structural fidelity, and they interact with
+individual objects via a point-and-click UI or attribute filter queries.
+
+Edits are applied at the PDF operator level and re-serialized without
+round-tripping through rasterization or PDF-to-HTML conversion. This is the
+core technical guarantee that separates this product from all competitors.
+
+
+--------------------------------------------------------------------------------
+2.4  FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+
+2.4.1  CORE UPLOAD & PARSING (FR-001 to FR-010)
+- - - - - - - - - - - - - - - - - - - - - - - -
+
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | ID     | Feature                 | Description                              | Priority | Status  |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-001 | PDF Upload              | Upload PDFs up to 50 MB via drag-and-drop| High     | Planned |
+  |        |                         | or file picker. Formats: PDF 1.4–2.0.    |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-002 | PDF Parsing             | Parse PDF content streams and build an   | High     | Planned |
+  |        |                         | object tree: pages, objects, attributes.  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-003 | Page Rendering          | Each page renders as an interactive      | High     | Planned |
+  |        |                         | canvas at native resolution. Zoom 25–400%|          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-004 | Object Overlay          | Parsed objects overlaid as selectable    | High     | Planned |
+  |        |                         | bounding boxes on rendered canvas.        |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-005 | Multi-page Support      | Navigate pages via thumbnail panel.      | Medium   | Planned |
+  |        |                         | Up to 200 pages for v1.                   |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-006 | Object Tree Panel       | Sidebar shows hierarchical list of all   | Medium   | Planned |
+  |        |                         | objects by type, page, and group.         |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-007 | Object Properties       | Selecting an object shows: type, fill    | High     | Planned |
+  |        |                         | color, stroke color, font name, size,     |          |         |
+  |        |                         | position, dimensions.                     |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-008 | Undo/Redo               | All editing operations support unlimited | High     | Planned |
+  |        |                         | undo/redo within the current session.     |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-009 | Session Autosave        | Work-in-progress preserved in browser    | Medium   | Planned |
+  |        |                         | storage every 60 seconds.                 |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-010 | Error Handling          | Malformed PDFs display a meaningful error| Medium   | Planned |
+  |        |                         | with the problematic element identified.  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+
+
+2.4.2  OBJECT SELECTION & FILTERING (FR-011 to FR-020)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | ID     | Feature                 | Description                              | Priority | Status  |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-011 | Click Selection         | Single-click on any rendered object      | High     | Planned |
+  |        |                         | selects it with visual highlight.         |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-012 | Multi-select            | Ctrl+click or lasso drag selects         | High     | Planned |
+  |        |                         | multiple objects simultaneously.          |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-013 | Filter by Color         | Enter hex color or use eyedropper;       | High     | Planned |
+  |        |                         | system selects all matching objects with  |          |         |
+  |        |                         | configurable color tolerance.             |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-014 | Filter by Type          | Dropdown: Text, Path, Image, FormXObject.| High     | Planned |
+  |        |                         | Select all of a type across page or doc.  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-015 | Filter by Font          | Select all text objects using a specific | Medium   | Planned |
+  |        |                         | embedded font name.                       |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-016 | Filter by Size          | Select objects within a bounding-box     | Medium   | Planned |
+  |        |                         | size range (width/height min/max in pt). |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-017 | Scope Selection         | Filters can be scoped: current page,     | High     | Planned |
+  |        |                         | page range, or entire document.           |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-018 | Save Filter Preset      | Save named filter presets for reuse      | Low      | Backlog |
+  |        |                         | across sessions.                          |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-019 | Invert Selection        | Button to invert current selection       | Low      | Backlog |
+  |        |                         | (select all unselected objects).          |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-020 | Selection Count         | HUD displays count of selected objects   | Medium   | Planned |
+  |        |                         | and their combined bounding area.         |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+
+
+2.4.3  OBJECT EDITING OPERATIONS (FR-021 to FR-035)
+- - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | ID     | Feature                 | Description                              | Priority | Status  |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-021 | Text Content Edit       | Double-click a text object to edit       | High     | Planned |
+  |        |                         | content inline. Font/size/color preserved |          |         |
+  |        |                         | unless explicitly changed.                |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-022 | Text Color Change       | Change fill/stroke color of selected     | High     | Planned |
+  |        |                         | text objects. Supports bulk change.       |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-023 | Text Font Change        | Replace font of selected text objects    | Medium   | Planned |
+  |        |                         | with any system or uploaded font.         |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-024 | Path Color Change       | Change fill and/or stroke color of       | High     | Planned |
+  |        |                         | selected path objects. Preserves geometry.|          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-025 | Path Delete             | Delete selected path objects from        | High     | Planned |
+  |        |                         | content stream. Layout unaffected.        |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-026 | Image Replace           | Replace an image XObject with a new      | High     | Planned |
+  |        |                         | uploaded image. Bounding box resizes.     |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-027 | Image Delete            | Remove selected image objects without    | Medium   | Planned |
+  |        |                         | affecting surrounding content.            |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-028 | Object Move             | Drag-and-drop to reposition objects.     | High     | Planned |
+  |        |                         | Position in PDF coordinate space (pt).    |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-029 | Object Resize           | Resize objects via corner handles.       | Medium   | Planned |
+  |        |                         | Proportional lock toggle available.       |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-030 | Bulk Delete             | Delete all objects matching current      | High     | Planned |
+  |        |                         | filter with confirmation dialog.          |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-031 | Bulk Recolor            | Apply color change to all objects        | High     | Planned |
+  |        |                         | matching current filter in one operation. |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-032 | Opacity Change          | Adjust opacity of selected objects       | Medium   | Backlog |
+  |        |                         | (0–100%). Applied as ExtGState.           |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-033 | Z-Order                 | Bring forward / send backward for        | Low      | Backlog |
+  |        |                         | object layer reordering.                  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-034 | Copy / Paste            | Copy selected objects and paste on same  | Medium   | Backlog |
+  |        |                         | or different page.                        |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-035 | Find & Replace Text     | Document-wide find and replace for text  | Medium   | Planned |
+  |        |                         | content within text objects.              |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+
+
+2.4.4  EXPORT & DOWNLOAD (FR-036 to FR-040)
+- - - - - - - - - - - - - - - - - - - - - -
+
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | ID     | Feature                 | Description                              | Priority | Status  |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-036 | Download Edited PDF     | Export modified PDF preserving embedded  | High     | Planned |
+  |        |                         | fonts, ICC profiles, and metadata.        |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-037 | Version History         | Store up to 5 versions on free tier;     | Medium   | Planned |
+  |        |                         | unlimited for paid tier.                  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-038 | Preview Before Export   | Full-page preview render before final    | Medium   | Planned |
+  |        |                         | download to verify output.                |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-039 | Export as PDF/A         | Option to output as PDF/A-1b for         | Low      | Backlog |
+  |        |                         | archival compliance.                      |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-040 | Batch Export            | Export edits applied to multiple PDFs    | Low      | Backlog |
+  |        |                         | simultaneously (Pro tier only).           |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+
+
+2.4.5  USER ACCOUNT & BILLING (FR-041 to FR-045)
+- - - - - - - - - - - - - - - - - - - - - - - - -
+
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | ID     | Feature                 | Description                              | Priority | Status  |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-041 | Email Sign-up / Login   | Register and log in via email/password   | High     | Planned |
+  |        |                         | or Google OAuth.                          |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-042 | Free Tier Limits        | Free: 3 PDF uploads/month, max 10 MB    | High     | Planned |
+  |        |                         | per file, 5 operations per session.       |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-043 | Pro Tier                | Pro ($19/mo): Unlimited uploads, 50 MB   | High     | Planned |
+  |        |                         | per file, batch export, version history.  |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-044 | Stripe Billing          | Subscription managed via Stripe.         | High     | Planned |
+  |        |                         | Cancel/upgrade/downgrade self-serve.      |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+  | FR-045 | Usage Dashboard         | Users see upload count, operations used, | Medium   | Planned |
+  |        |                         | and storage consumed.                     |          |         |
+  +--------+-------------------------+------------------------------------------+----------+---------+
+
+
+--------------------------------------------------------------------------------
+2.5  NON-FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+
+2.5.1  PERFORMANCE
+  - PDF upload and initial parse: < 5 seconds for files up to 10 MB on
+    standard broadband.
+  - Page render time: < 2 seconds per page at 100% zoom on mid-range hardware.
+  - Object selection latency: < 100 ms from click to highlight.
+  - Bulk filter operation (document-wide): < 3 seconds for up to 500 objects.
+  - Export/download: < 10 seconds for a 50-page, 20 MB document.
+
+2.5.2  RELIABILITY & AVAILABILITY
+  - System uptime: 99.5% monthly SLA for production environment.
+  - Data durability: 99.999999999% (11 nines) via S3-compatible object storage.
+  - File retention: 30 days on free tier, 1 year on Pro tier.
+  - Graceful degradation: If PDF parsing fails, original file is returned
+    unmodified with error details.
+
+2.5.3  SECURITY
+  - All file uploads and downloads over HTTPS (TLS 1.3 minimum).
+  - Files encrypted at rest (AES-256) and in transit.
+  - User authentication via JWT tokens with 24-hour expiry and refresh flow.
+  - No PDF content stored beyond the user's configured retention period.
+  - GDPR-compliant data deletion: user can delete all data from account settings.
+  - Content Security Policy (CSP) headers preventing XSS on the editor canvas.
+
+2.5.4  COMPATIBILITY
+  - Browser support: Chrome 110+, Firefox 110+, Safari 16+, Edge 110+.
+  - PDF spec support: PDF versions 1.4 through 2.0; partial support for
+    encrypted PDFs (requires password entry).
+  - Responsive layout: functional on 1280px+ width displays (desktop-first,
+    mobile is read-only in v1).
+
+2.5.5  ACCESSIBILITY
+  - WCAG 2.1 AA compliance for all UI chrome (menus, panels, dialogs).
+  - Keyboard navigation for all primary editing operations.
+  - Screen reader support for object selection and property panels.
+
+
+--------------------------------------------------------------------------------
+2.6  SYSTEM ARCHITECTURE OVERVIEW
+--------------------------------------------------------------------------------
+
+The system follows a three-tier web architecture with a dedicated PDF
+processing microservice isolated for security and scalability.
+
+  +------------------------------------------------------------------+
+  | Layer                  | Technology / Responsibility              |
+  +------------------------+------------------------------------------+
+  | Frontend               | React SPA — canvas-based PDF renderer,   |
+  |                        | object overlay, property panels, filter UI|
+  +------------------------+------------------------------------------+
+  | API Gateway            | Node.js / Express — authentication, rate  |
+  |                        | limiting, request routing                 |
+  +------------------------+------------------------------------------+
+  | PDF Processing Service | Python (pikepdf + pdfminer.six) —        |
+  |                        | parsing, editing, re-serialization        |
+  +------------------------+------------------------------------------+
+  | Storage                | S3-compatible object storage for PDFs    |
+  +------------------------+------------------------------------------+
+  | Database               | PostgreSQL — user accounts, sessions,    |
+  |                        | version history metadata                  |
+  +------------------------+------------------------------------------+
+  | Billing                | Stripe — subscription lifecycle mgmt     |
+  +------------------------------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+2.7  TECH STACK RECOMMENDATION
+--------------------------------------------------------------------------------
+
+  +------------------------------+----------------------------------------------+
+  | Layer                        | Technology & Reason                          |
+  +------------------------------+----------------------------------------------+
+  | Frontend Framework           | Next.js 14 + TypeScript                      |
+  | PDF Rendering (Browser)      | PDF.js (Mozilla) — open source, battle-tested|
+  | Object Overlay (Canvas)      | Konva.js or Fabric.js — interactive canvas   |
+  | PDF Parsing & Edit (Server)  | pikepdf (Python) — direct stream editing     |
+  | API Layer                    | FastAPI (Python) — async request handling    |
+  | Authentication               | NextAuth.js + Supabase Auth (JWT)            |
+  | Database                     | PostgreSQL via Supabase                      |
+  | Object Storage               | AWS S3 or Cloudflare R2                      |
+  | Billing                      | Stripe — SCA-compliant, proven SaaS billing  |
+  | Deployment                   | Vercel (frontend) + Railway (API)            |
+  | Est. Monthly Infra Cost      | ~$73/month at launch scale                   |
+  +------------------------------+----------------------------------------------+
+
+
+--------------------------------------------------------------------------------
+2.8  DATA FLOW
+--------------------------------------------------------------------------------
+
+The core editing pipeline (7 steps) preserves PDF structural integrity at
+every stage:
+
+  Step 1: User uploads PDF → stored in S3, hash computed for deduplication.
+
+  Step 2: PDF Processing Service parses content streams with pikepdf, builds
+          object model (type, attributes, position, page index).
+
+  Step 3: Object model serialized to JSON, stored in PostgreSQL alongside
+          S3 key.
+
+  Step 4: Frontend fetches object model + rendered page images from PDF.js;
+          overlays interactive Konva/Fabric canvas.
+
+  Step 5: User applies edits → diffs recorded as operation log in client state.
+
+  Step 6: On export: operation log sent to PDF Processing Service; operations
+          applied to original PDF byte stream using pikepdf operators.
+
+  Step 7: Modified PDF re-serialized, validated, stored in S3, and streamed
+          back to the browser for download.
+
+  KEY DESIGN GUARANTEE:
+  At no point in this pipeline is the PDF converted to an image, re-imported
+  through a layout engine, or passed through a font re-encoding step. This is
+  what prevents font corruption and preserves vector fidelity.
+
+
+--------------------------------------------------------------------------------
+2.9  OUT OF SCOPE FOR v1.0
+--------------------------------------------------------------------------------
+
+  +--------------------------------+--------------------------------------------+
+  | Feature                        | Reason / Future Version                    |
+  +--------------------------------+--------------------------------------------+
+  | OCR / Scanned PDFs             | Requires Tesseract; planned for v2         |
+  | PDF Creation from Scratch      | Market has sufficient tools (LaTeX, Canva) |
+  | Advanced Vector Editing        | Bezier curve points — belongs in Figma     |
+  | Form Filling / Signing         | Separate category; Adobe Sign owns it      |
+  | Mobile-responsive Editing      | Canvas needs pointer precision; v2         |
+  | Real-time Collaboration        | Conflict resolution is complex; post-MVP   |
+  | Batch API (headless)           | Programmatic PDF ops — v3 Enterprise       |
+  +--------------------------------+--------------------------------------------+
+
+
+================================================================================
+  PART III — GO-TO-MARKET & BUSINESS MODEL
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1  PRICING STRATEGY
+--------------------------------------------------------------------------------
+
+  FREE TIER
+  ---------
+  - 3 PDFs/month
+  - Max 10 MB/file
+  - 5 operations per session
+  - Download modified PDF
+  - Community support
+
+  PRO — $19/month
+  ---------------
+  - Unlimited PDFs
+  - Max 50 MB/file
+  - Unlimited operations
+  - Version history (10 versions)
+  - Batch export
+  - Filter presets
+  - Email support
+
+  TEAM — $49/month
+  ----------------
+  - Unlimited PDFs
+  - Max 100 MB/file
+  - Unlimited operations
+  - Version history (unlimited)
+  - Batch export + API access
+  - Team workspace sharing
+  - Priority support + SLA
+
+
+--------------------------------------------------------------------------------
+3.2  90-DAY LAUNCH PLAN
+--------------------------------------------------------------------------------
+
+  DAYS 1–30   : MVP BUILD
+                Build: PDF parsing, click selection, text/path recolor,
+                bulk delete. Launch on Product Hunt. Set up Stripe billing.
+
+  DAYS 31–60  : GROWTH
+                SEO content targeting:
+                  - "edit PDF objects without converting"
+                  - "change PDF text color"
+                  - "bulk edit PDF paths"
+                Launch posts on r/pdf and r/graphic_design.
+
+  DAYS 61–90  : CONVERSION OPTIMIZATION
+                Improve filter UX from beta feedback. Add filter presets (Pro)
+                and version history. Target first 50 paying users ($950 MRR).
+
+
+--------------------------------------------------------------------------------
+3.3  SUCCESS METRICS (KPIs)
+--------------------------------------------------------------------------------
+
+  +-------------------------------------+---------------------------------------+
+  | KPI                                 | Target                                |
+  +-------------------------------------+---------------------------------------+
+  | Weekly Active Users (WAU)           | 500 WAU by Day 90                     |
+  | Free-to-Pro Conversion Rate         | 4–6% (SaaS benchmark)                 |
+  | Avg. Edit Time Per PDF              | < 8 minutes                           |
+  | Customer Satisfaction (CSAT)        | > 4.2 / 5.0 on post-export survey     |
+  | PDFs Edited per Week                | 2,000+ after Day 60                   |
+  | MRR at 90 Days                      | $1,000+ (early signal for $10K+ path) |
+  | Monthly Churn Rate (Pro)            | < 5% monthly                          |
+  +-------------------------------------+---------------------------------------+
+
+
+--------------------------------------------------------------------------------
+3.4  RISK REGISTER
+--------------------------------------------------------------------------------
+
+  RISK 1: Complex PDF structure breaks parser
+  Severity: HIGH
+  Mitigation: Use pikepdf, the most robust open-source PDF library. Add
+  fallback to return unmodified file with error details on parse failure.
+
+  RISK 2: Font corruption on re-serialization
+  Severity: HIGH
+  Mitigation: Never decompress or re-encode font streams. Apply all edits
+  via PDF operators only. Font streams are treated as read-only blobs.
+
+  RISK 3: Adobe launches competing feature
+  Severity: MEDIUM
+  Mitigation: Focus on niche (bulk attribute operations) not covered by
+  Acrobat's UI. Build API layer for automation users — Acrobat has no API.
+
+  RISK 4: Low free-to-Pro conversion
+  Severity: MEDIUM
+  Mitigation: Gate bulk operations (FR-030, FR-031) behind Pro tier. These
+  are the highest-value features that power users need most.
+
+  RISK 5: Security — PDF malware upload
+  Severity: MEDIUM
+  Mitigation: Scan uploads with ClamAV. Execute parsing in sandboxed
+  container. No code execution from PDF content. S3 isolation per user.
+
+
+================================================================================
+  APPENDIX — REVISION HISTORY
+================================================================================
+
+  +----------+----------+--------------------+----------------------------------+
+  | Version  | Date     | Author             | Changes                          |
+  +----------+----------+--------------------+----------------------------------+
+  | 1.0.0    | May 2025 | Claude (Assistant) | Initial draft — derived from     |
+  |          |          |                    | Idearupt.ai validation data      |
+  +----------+----------+--------------------+----------------------------------+
+
+
+================================================================================
+  END OF DOCUMENT
+  PDF Object Editor SRS v1.0.0 — CONFIDENTIAL
+================================================================================
