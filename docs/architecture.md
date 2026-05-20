@@ -21,6 +21,16 @@
 - API + Worker + Redis + Postgres: Railway/Render managed services.
 - Secrets managed via environment variables.
 
+## Migration Workflow
+- Local: `cd apps/api && alembic upgrade head`
+- Dev/Staging: run migrations during deployment before API starts serving traffic.
+- Prod: run forward-only migration as a pre-deploy step with backup/snapshot already taken.
+
+## Rollback Policy
+- Prefer fast forward-fix migration when possible.
+- If rollback is required, run `alembic downgrade -1` only during a controlled maintenance window.
+- For destructive changes, restore from managed database snapshot and redeploy last known good API build.
+
 ## Reliability & Security
 - JWT verification at API boundaries.
 - Ownership checks for all file/object/edit/export access.

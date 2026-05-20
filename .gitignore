@@ -23,6 +23,8 @@ coverage/
 .coverage
 *.lcov
 htmlcov/
+*.tsbuildinfo
+coverage.xml
 
 # OS / editor
 .DS_Store

@@ -17,6 +17,14 @@ PDF Object Editor provides non-rasterized, object-level editing for PDF text, pa
 - OCR-heavy analysis workflows
 - Plugin marketplace
 
+## 2.1 Delivery Epics
+- Platform Setup
+- Auth
+- File Pipeline
+- Editor
+- Billing
+- Ops
+
 ## 3. User Roles
 - Free user
 - Pro user

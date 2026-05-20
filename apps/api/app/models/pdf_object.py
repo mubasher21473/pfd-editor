@@ -1,7 +1,7 @@
 import enum
 import uuid
 
-from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,9 +19,11 @@ class PdfObject(Base):
     __tablename__ = "pdf_objects"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    file_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE"))
+    file_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE")
+    )
     page_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    object_type: Mapped[ObjectType] = mapped_column(nullable=False)
+    object_type: Mapped[ObjectType] = mapped_column(Enum(ObjectType), nullable=False)
     stream_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     x: Mapped[float | None] = mapped_column(Float, nullable=True)
     y: Mapped[float | None] = mapped_column(Float, nullable=True)

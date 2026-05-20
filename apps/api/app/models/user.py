@@ -24,9 +24,13 @@ class User(Base):
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     provider: Mapped[str] = mapped_column(String(50), default="email", nullable=False)
-    tier: Mapped[SubscriptionTier] = mapped_column(Enum(SubscriptionTier), default=SubscriptionTier.free)
+    tier: Mapped[SubscriptionTier] = mapped_column(
+        Enum(SubscriptionTier), default=SubscriptionTier.free
+    )
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     uploads_this_month: Mapped[int] = mapped_column(default=0)
-    uploads_reset_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    uploads_reset_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

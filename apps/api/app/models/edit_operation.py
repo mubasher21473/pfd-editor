@@ -20,7 +20,9 @@ class EditOperation(Base):
     __tablename__ = "edit_operations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    file_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE"))
+    file_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE")
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     operation: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -30,7 +32,9 @@ class Export(Base):
     __tablename__ = "exports"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    file_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE"))
+    file_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE")
+    )
     s3_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     status: Mapped[EditStatus] = mapped_column(Enum(EditStatus), default=EditStatus.pending)
     download_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
