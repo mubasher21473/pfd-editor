@@ -25,7 +25,7 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     provider: Mapped[str] = mapped_column(String(50), default="email", nullable=False)
     tier: Mapped[SubscriptionTier] = mapped_column(
-        Enum(SubscriptionTier), default=SubscriptionTier.free
+        Enum(SubscriptionTier, name="subscription_tier"), default=SubscriptionTier.free
     )
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     uploads_this_month: Mapped[int] = mapped_column(default=0)

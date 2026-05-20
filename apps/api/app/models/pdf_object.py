@@ -23,7 +23,9 @@ class PdfObject(Base):
         UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE")
     )
     page_index: Mapped[int] = mapped_column(Integer, nullable=False)
-    object_type: Mapped[ObjectType] = mapped_column(Enum(ObjectType), nullable=False)
+    object_type: Mapped[ObjectType] = mapped_column(
+        Enum(ObjectType, name="object_type"), nullable=False
+    )
     stream_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     x: Mapped[float | None] = mapped_column(Float, nullable=True)
     y: Mapped[float | None] = mapped_column(Float, nullable=True)

@@ -36,7 +36,9 @@ class Export(Base):
         UUID(as_uuid=True), ForeignKey("pdf_files.id", ondelete="CASCADE")
     )
     s3_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-    status: Mapped[EditStatus] = mapped_column(Enum(EditStatus), default=EditStatus.pending)
+    status: Mapped[EditStatus] = mapped_column(
+        Enum(EditStatus, name="edit_status"), default=EditStatus.pending
+    )
     download_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

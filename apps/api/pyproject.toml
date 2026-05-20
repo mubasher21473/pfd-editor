@@ -15,7 +15,7 @@ module = [
     "app.db.migrations.*",
     "app.config",
     "app.core.security",
-    "app.services.stripe_service",
+    "app.services.*",
 ]
 ignore_errors = true
 

@@ -4,8 +4,15 @@
   "version": "0.1.0",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "dev": "concurrently -n api,worker,web -c blue,green,yellow \"cd apps/api && uvicorn app.main:app --reload\" \"cd apps/api && python3 -m celery -A app.tasks.celery_app.celery_app worker -l info\" \"cd apps/web && pnpm dev\"",
+    "dev:all": "concurrently -n infra,api,worker,web -c red,blue,green,yellow \"docker compose -f docker/docker-compose.yml up redis minio minio-setup\" \"cd apps/api && uvicorn app.main:app --reload\" \"cd apps/api && python3 -m celery -A app.tasks.celery_app.celery_app worker -l info\" \"cd apps/web && pnpm dev\"",
+    "restart": "fuser -k 8000/tcp 3000/tcp 2>/dev/null; pkill -f 'celery.*worker' 2>/dev/null; sleep 1; pnpm dev:all",
     "lint": "pnpm --filter web lint",
     "type-check": "pnpm --filter web type-check",
     "build": "pnpm --filter web build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

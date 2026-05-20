@@ -2,14 +2,18 @@ export type ObjectType = "text" | "path" | "image" | "form_xobject";
 
 export interface PdfObject {
   id: string;
-  pageIndex: number;
-  objectType: ObjectType;
+  page_index: number;
+  object_type: ObjectType;
   x?: number;
   y?: number;
   width?: number;
   height?: number;
-  textContent?: string;
-  rawAttrs?: Record<string, unknown>;
+  fill_color?: string;
+  stroke_color?: string;
+  font_name?: string;
+  font_size?: number;
+  text_content?: string;
+  raw_attrs?: Record<string, unknown>;
 }
 
 export interface PdfPage {
