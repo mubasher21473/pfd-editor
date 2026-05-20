@@ -2,6 +2,20 @@
 
 This plan is based on `docs/SRS.md`, `docs/architecture.md`, and the current codebase state on 2026-05-20.
 
+## Current Priority
+
+The immediate focus is development, not production hardening.
+
+For now, the main goal is to make the core product work locally:
+
+1. Upload a PDF.
+2. Parse and persist PDF objects.
+3. Inspect objects in the editor.
+4. Submit object-level edits.
+5. Export and download an edited PDF.
+
+Production concerns such as Stripe billing, CI hardening, deployment readiness, advanced observability, and strict entitlement enforcement are intentionally deferred unless they are needed to keep the local development flow moving.
+
 ## Current State Summary
 
 The repository has the intended monorepo shape and most module names are already present:
@@ -30,23 +44,23 @@ The implementation is currently mostly placeholder behavior:
 | FR-4 Retrieve parsed object data | Stub | Returns empty object list; parser and persistence not implemented. |
 | FR-5 Submit single/bulk edits | Stub | Accepts generic dicts; no operation validation, ownership check, object validation, persistence, or editor state handling. |
 | FR-6 Export and download URL | Stub | Returns example URL; no export job, output persistence, signed URL, status endpoint, or failure handling. |
-| FR-7 Stripe webhook entitlement updates | Stub | Webhook signature helper exists, but endpoint does not read payload, update users, or handle subscription events. |
+| FR-7 Stripe webhook entitlement updates | Deferred | Webhook signature helper exists, but billing is not part of the current development-first MVP. |
 | NFR-1 JSON schema consistency | Partial | Pydantic schemas exist but routes do not consistently use them. |
 | NFR-2 Async parse/export jobs | Partial scaffold | Celery app exists but has no broker config and tasks only echo ids. |
 | NFR-3 Structured logging/failures | Partial scaffold | Logging/exceptions modules exist but are not integrated into route/task paths. |
-| NFR-4 Tier policy enforcement | Not implemented | Settings define limits, but there is no policy service or route enforcement. |
-| NFR-5 CI lint/type/test/build | Partial | CI exists, but frontend dependency cache path may need validation; tests do not cover real behavior yet. |
+| NFR-4 Tier policy enforcement | Deferred | Keep only simple local file-size guards for now; full free/pro/team policy comes later. |
+| NFR-5 CI lint/type/test/build | Later | Basic local checks matter now; CI hardening is deferred. |
 
 ## Delivery Plan
 
-### Phase 0: Product and Contract Baseline
+### Phase 0: Development Contract Baseline
 
 Goal: lock down the API/frontend contract before implementing feature logic.
 
 Tasks:
 
 1. Define canonical API response models.
-   - Expand backend schemas for users, files, objects, edits, exports, billing, errors, and job status.
+   - Expand backend schemas for users, files, objects, edits, exports, errors, and job status.
    - Add matching TypeScript types in `packages/shared-types` or `apps/web/src/types`.
    - Normalize naming between backend `page_index`/`object_type` and frontend `pageIndex`/`objectType`.
 
@@ -69,7 +83,7 @@ Acceptance checks:
 
 ### Phase 1: Backend Foundation
 
-Goal: make the API capable of real authenticated persistence.
+Goal: make the API capable of real local-development persistence.
 
 Tasks:
 
@@ -85,18 +99,18 @@ Tasks:
    - Add transaction boundaries for upload, delete, edit submission, and export creation.
 
 3. Auth integration.
-   - Wire `get_current_user` into protected routes.
-   - Load or provision the `User` row from JWT subject and email claims.
+   - Add a development-friendly current-user path so core features can be built without waiting on final auth.
+   - Wire `get_current_user` into protected routes where it does not slow the local MVP.
+   - Load or provision the `User` row from JWT subject and email claims when auth is available.
    - Implement `/api/v1/auth/me` to return `UserOut`.
-   - Add tests for missing token, invalid token, and valid token.
+   - Add focused tests for the chosen development auth path.
 
 4. Error and logging baseline.
-   - Add consistent JSON errors for unauthorized, forbidden, not found, validation, and background job failure states.
-   - Add structured logs for request failure, parse failure, export failure, and Stripe webhook failure.
+   - Add simple consistent JSON errors for not found, validation, and background job failure states.
+   - Add enough logging to debug upload, parse, edit, and export failures locally.
 
 Acceptance checks:
 
-- Protected endpoints reject unauthenticated requests.
 - A valid token can retrieve `/auth/me`.
 - Ownership checks prevent one user from reading or changing another user's files.
 - `ruff`, `mypy`, and backend tests pass.
@@ -114,9 +128,8 @@ Tasks:
    - Add unit tests with mocked S3 client.
 
 2. Tier policy service.
-   - Implement free/pro/team max file size checks.
-   - Implement monthly upload counters and reset behavior.
-   - Return clear policy errors when limits are exceeded.
+   - For development, implement only a simple max file size check if needed to prevent very large local uploads.
+   - Defer monthly upload counters and free/pro/team enforcement to the billing/backlog phase.
 
 3. Upload endpoint.
    - Validate content type and PDF header.
@@ -151,7 +164,7 @@ Acceptance checks:
 - Parse task populates object rows for a sample PDF.
 - List shows uploaded file and parse status.
 - Delete removes the DB record and storage payload.
-- Free-tier size/upload limits are enforced.
+- Local file size guard works if enabled.
 
 ### Phase 3: Object Retrieval and Filtering
 
@@ -246,7 +259,7 @@ Tasks:
 1. Auth/session flow.
    - Configure NextAuth provider(s) and session callbacks.
    - Ensure API token is available to `apiFetch`.
-   - Protect dashboard/editor/billing routes.
+   - Protect dashboard and editor routes only as much as needed for local development.
    - Show useful unauthenticated and error states.
 
 2. Dashboard.
@@ -278,11 +291,6 @@ Tasks:
    - Trigger export, poll status, and open/download the completed file.
    - Keep buttons disabled when action is not valid.
 
-7. Billing UI.
-   - Show current tier and limits.
-   - Add upgrade flow once checkout endpoint exists.
-   - Show gated states when upload/export actions exceed tier.
-
 Acceptance checks:
 
 - User can upload a PDF from dashboard.
@@ -291,54 +299,55 @@ Acceptance checks:
 - User can export and download the edited PDF.
 - UI handles loading, error, empty, pending, and permission states.
 
-### Phase 7: Billing and Entitlements
+### Phase 7: Development Quality Pass
 
-Goal: make Stripe-backed tier updates reliable.
+Goal: make the local MVP stable enough to continue feature development without wasting time on production infrastructure.
 
 Tasks:
 
-1. Checkout session endpoint.
-   - Add endpoint to create Stripe checkout session.
-   - Include user id and tier/price metadata.
-   - Persist `stripe_customer_id` where needed.
+1. Backend behavior tests.
+   - Replace placeholder endpoint tests for the core path: upload, list/delete, object retrieval, edits, and export.
+   - Mock storage and Celery enqueue where that keeps tests fast.
+   - Add parser/exporter sample PDF fixtures.
 
-2. Webhook endpoint.
-   - Read raw request body and `Stripe-Signature`.
-   - Verify signature through `StripeService`.
-   - Handle `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
-   - Update `users.tier` and billing metadata transactionally.
-   - Make event handling idempotent.
+2. Frontend sanity checks.
+   - Keep TypeScript checks passing.
+   - Add only targeted tests if they directly protect the editor or upload flow.
+   - Avoid adding a broad frontend testing setup until the UI behavior settles.
 
-3. Billing status endpoint.
-   - Return current tier, active flag, limits, and current usage.
-   - Use this in dashboard/editor gating.
+3. Local developer workflow.
+   - Document exact commands to run Postgres, Redis, MinIO, API, worker, and web.
+   - Add seed/sample PDF notes if helpful.
+   - Keep `.env.example` files aligned with what local development needs.
 
 Acceptance checks:
 
-- Valid webhook updates user tier.
-- Invalid signature is rejected.
-- Replayed event does not corrupt entitlement state.
-- Frontend reflects tier and limits.
+- The upload -> parse -> inspect -> edit -> export path has automated backend coverage.
+- A developer can run the full stack locally from documented commands.
+- Type checks and focused tests pass.
 
-### Phase 8: Quality, CI, and Deployment
+### Deferred: Billing, Entitlements, and Production Hardening
 
-Goal: make the MVP maintainable and deployable.
+Goal: keep production work visible without letting it consume current development time.
 
 Tasks:
 
-1. Backend tests.
-   - Replace placeholder endpoint tests with auth, ownership, upload, list/delete, object retrieval, edits, export, and billing tests.
-   - Mock storage, Celery enqueue, and Stripe where appropriate.
-   - Add parser/exporter sample PDF fixtures.
+1. Billing and entitlements.
+   - Add Stripe checkout session endpoint.
+   - Verify Stripe webhooks from raw body and `Stripe-Signature`.
+   - Handle subscription lifecycle events.
+   - Update user tiers transactionally and idempotently.
+   - Add billing status endpoint and frontend upgrade/gating states.
 
-2. Frontend tests/checks.
-   - Add component tests for upload, dashboard list, property panel, and export status if a frontend test framework is introduced.
-   - Keep lint, type-check, and production build passing.
+2. Production auth hardening.
+   - Finalize provider/session strategy.
+   - Enforce unauthenticated/forbidden behavior consistently.
+   - Review token claims and user provisioning rules.
 
 3. CI hardening.
    - Validate pnpm cache configuration.
    - Add migrations check.
-   - Ensure required test environment variables include Stripe config.
+   - Ensure required test environment variables include production-adjacent config.
    - Consider service containers for Redis and MinIO or mock them at test level.
 
 4. Deployment readiness.
@@ -349,8 +358,9 @@ Tasks:
 
 Acceptance checks:
 
+- Stripe events update user tier.
+- Tier rules apply consistently across backend and frontend.
 - CI passes on pull requests.
-- Fresh local setup can run web, API, worker, Postgres, Redis, and MinIO.
 - Deployment docs list every required secret and command.
 
 ## Suggested Build Order
@@ -363,12 +373,12 @@ Acceptance checks:
 6. Export task and status/download flow.
 7. Frontend dashboard upload and file list.
 8. Frontend editor rendering, selection, editing, and export.
-9. Billing checkout/webhook and entitlement gates.
-10. Test coverage, CI hardening, and deployment cleanup.
+9. Development quality pass for the full local MVP.
+10. Billing, entitlement gates, CI hardening, and deployment cleanup later.
 
 ## Milestones
 
-### Milestone 1: Authenticated File Pipeline
+### Milestone 1: Local File Pipeline
 
 Scope:
 
@@ -381,8 +391,8 @@ Scope:
 
 Done when:
 
-- A signed-in user can upload, list, and delete only their own PDFs.
-- Upload limits are enforced.
+- A development user can upload, list, and delete PDFs.
+- A simple local file-size guard is enforced if enabled.
 - Parse status changes are persisted.
 
 ### Milestone 2: Inspectable Parsed PDFs
@@ -425,7 +435,22 @@ Done when:
 
 - The full acceptance flow works: upload -> parse -> inspect -> edit -> export.
 
-### Milestone 5: Paid Entitlements and Production Readiness
+### Milestone 5: Development Stabilization
+
+Scope:
+
+- Focused backend tests for the core local flow
+- Type checks
+- Local setup documentation
+- Sample PDF fixtures
+
+Done when:
+
+- A developer can run the full MVP locally.
+- The core backend path has meaningful test coverage.
+- The app is ready for the next feature iteration without production work blocking it.
+
+### Later Milestone: Paid Entitlements and Production Readiness
 
 Scope:
 
@@ -444,11 +469,11 @@ Done when:
 
 Start with these small, concrete tasks:
 
-1. Implement `/api/v1/auth/me` with real `UserOut` and route-level auth.
-2. Add backend tests for authenticated and unauthenticated `/auth/me`.
-3. Add a policy service for tier upload size/count checks.
-4. Implement real file upload persistence using DB and storage service.
-5. Configure Celery with `REDIS_URL` and enqueue parse jobs from upload.
+1. Implement a development-friendly `/api/v1/auth/me` that returns a real `UserOut`.
+2. Add backend tests for the current development auth path.
+3. Implement real file upload persistence using DB and storage service.
+4. Configure Celery with `REDIS_URL` and enqueue parse jobs from upload.
+5. Implement parser persistence for text objects first.
 6. Replace dashboard placeholder with API-backed file list and upload component.
 
 These tasks create the foundation required by every later milestone.
