@@ -1,16 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditorStore } from "@/store/editorStore";
+import { api } from "@/lib/api";
 
 export default function PropertyPanel() {
   const objects = useEditorStore((s) => s.objects);
+  const fileId = useEditorStore((s) => s.fileId);
   const selectedObjectIds = useEditorStore((s) => s.selectedObjectIds);
+  const setSelectedObjectIds = useEditorStore((s) => s.setSelectedObjectIds);
   const addEdit = useEditorStore((s) => s.addEdit);
 
   const [editText, setEditText] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editStrokeColor, setEditStrokeColor] = useState("");
   const [editFontSize, setEditFontSize] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const selected = objects.filter((o) => selectedObjectIds.includes(o.id));
   const obj = selected[0] ?? null;
@@ -19,7 +26,9 @@ export default function PropertyPanel() {
     if (!obj) return;
     setEditText(obj.text_content ?? "");
     setEditColor(obj.fill_color ?? "");
+    setEditStrokeColor(obj.stroke_color ?? "");
     setEditFontSize(String(obj.font_size ?? ""));
+    setImageError(null);
   }, [obj]);
 
   const handleSaveText = useCallback(() => {
@@ -41,6 +50,15 @@ export default function PropertyPanel() {
     });
   }, [editColor, obj, addEdit]);
 
+  const handleSaveStrokeColor = useCallback(() => {
+    if (!obj || !editStrokeColor.trim() || editStrokeColor === obj.stroke_color) return;
+    addEdit({
+      object_id: obj.id,
+      op: "set_stroke_color",
+      color: editStrokeColor,
+    });
+  }, [editStrokeColor, obj, addEdit]);
+
   const handleSaveFontSize = useCallback(() => {
     if (!obj) return;
     const size = parseFloat(editFontSize);
@@ -51,6 +69,38 @@ export default function PropertyPanel() {
       font_size: size,
     });
   }, [editFontSize, obj, addEdit]);
+
+  const handleDelete = useCallback(() => {
+    if (!obj) return;
+    addEdit({ object_id: obj.id, op: "delete", old_text: obj.text_content ?? "" });
+    setSelectedObjectIds([]);
+  }, [obj, addEdit, setSelectedObjectIds]);
+
+  const handleReplaceImage = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const imageFile = e.target.files?.[0];
+      if (!imageFile || !obj || !fileId) return;
+      setImageUploading(true);
+      setImageError(null);
+      try {
+        const result = await api.objects.uploadImage(fileId, obj.id, imageFile);
+        const xobjectName =
+          typeof obj.raw_attrs?.xobject_name === "string" ? obj.raw_attrs.xobject_name : "";
+        addEdit({
+          object_id: obj.id,
+          op: "replace_image",
+          xobject_name: xobjectName,
+          image_s3_key: result.image_s3_key,
+        });
+      } catch (err) {
+        setImageError(err instanceof Error ? err.message : "Image upload failed");
+      } finally {
+        setImageUploading(false);
+        if (imageInputRef.current) imageInputRef.current.value = "";
+      }
+    },
+    [obj, fileId, addEdit]
+  );
 
   if (!obj) {
     return (
@@ -130,7 +180,7 @@ export default function PropertyPanel() {
 
       <div className="space-y-2">
         <label className="font-medium">
-          {obj.fill_color ? "Fill color" : "Color"}
+          {obj.object_type === "text" ? "Text color" : "Fill color"}
         </label>
         <div className="flex gap-2">
           <input
@@ -156,6 +206,52 @@ export default function PropertyPanel() {
         </div>
       </div>
 
+      {obj.object_type !== "text" && (
+        <div className="space-y-2">
+          <label className="font-medium">Stroke color</label>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              className="h-9 w-12 cursor-pointer rounded border"
+              value={editStrokeColor || "#000000"}
+              onChange={(e) => setEditStrokeColor(e.target.value)}
+            />
+            <input
+              type="text"
+              className="flex-1 rounded border px-2 py-1.5 font-mono text-xs"
+              value={editStrokeColor}
+              onChange={(e) => setEditStrokeColor(e.target.value)}
+              placeholder="#000000"
+            />
+            <button
+              onClick={handleSaveStrokeColor}
+              disabled={!editStrokeColor.trim()}
+              className="shrink-0 rounded border px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Set
+            </button>
+          </div>
+        </div>
+      )}
+
+      {obj.object_type === "image" && (
+        <div className="space-y-2">
+          <label className="font-medium">Replace image</label>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
+            className="w-full text-xs"
+            onChange={handleReplaceImage}
+            disabled={imageUploading}
+          />
+          {imageUploading && (
+            <p className="text-xs text-blue-600">Uploading replacement image…</p>
+          )}
+          {imageError && <p className="text-xs text-red-600">{imageError}</p>}
+        </div>
+      )}
+
       {selected.length > 1 && (
         <div className="space-y-2 border-t pt-3">
           <p className="text-xs text-slate-400">
@@ -177,12 +273,21 @@ export default function PropertyPanel() {
                 }}
                 className="rounded border px-3 py-1.5 hover:bg-slate-50"
               >
-                Apply color to all
+                Apply fill to all
               </button>
             </div>
           )}
         </div>
       )}
+
+      <div className="border-t pt-3">
+        <button
+          onClick={handleDelete}
+          className="w-full rounded border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+        >
+          Delete object
+        </button>
+      </div>
     </aside>
   );
 }

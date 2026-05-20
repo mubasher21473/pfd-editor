@@ -101,11 +101,26 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       const newHistory = s.history.slice(0, s.historyIndex + 1);
       newHistory.push(snapshot);
       if (newHistory.length > 50) newHistory.shift();
-      return {
-        saveStatus: "idle",
+
+      const base = {
+        saveStatus: "idle" as const,
         history: newHistory,
         historyIndex: newHistory.length - 1,
         pendingEdits: [...s.pendingEdits, edit],
+      };
+
+      if (edit.op === "delete") {
+        return {
+          ...base,
+          objects: s.objects.filter((o) => o.id !== edit.object_id),
+          selectedObjectIds: s.selectedObjectIds.filter((id) => id !== edit.object_id),
+          inlineEditingObjectId:
+            s.inlineEditingObjectId === edit.object_id ? null : s.inlineEditingObjectId,
+        };
+      }
+
+      return {
+        ...base,
         objects: s.objects.map((object) => {
           if (object.id !== edit.object_id) return object;
           if (edit.op === "replace_text" && typeof edit.text === "string") {
@@ -113,6 +128,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
           }
           if (edit.op === "set_fill_color" && typeof edit.color === "string") {
             return { ...object, fill_color: edit.color };
+          }
+          if (edit.op === "set_stroke_color" && typeof edit.color === "string") {
+            return { ...object, stroke_color: edit.color };
           }
           if (edit.op === "set_font_size" && typeof edit.font_size === "number") {
             return { ...object, font_size: edit.font_size };
@@ -129,6 +147,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
               ...object,
               width: typeof edit.width === "number" ? edit.width : object.width,
               height: typeof edit.height === "number" ? edit.height : object.height,
+            };
+          }
+          if (edit.op === "replace_image" && typeof edit.image_s3_key === "string") {
+            return {
+              ...object,
+              raw_attrs: { ...object.raw_attrs, pending_image_key: edit.image_s3_key },
             };
           }
           return object;
@@ -166,7 +190,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       };
     }),
   canUndo: () => get().historyIndex >= 0,
-  canRedo: () => get().historyIndex + 1 < get().history.length - 1,
+  canRedo: () => get().historyIndex + 1 < get().history.length,
   clearPendingEdits: () => set({ pendingEdits: [], saveStatus: "saved", history: [], historyIndex: -1 }),
   setSaveStatus: (status) => set({ saveStatus: status }),
   setExportId: (id) => set({ exportId: id }),

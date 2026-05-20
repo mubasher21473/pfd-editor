@@ -19,10 +19,12 @@ class PdfEditorService:
             handler = {
                 "replace_text": self._replace_text,
                 "set_fill_color": self._set_fill_color,
+                "set_stroke_color": self._set_stroke_color,
                 "set_font_size": self._set_font_size,
                 "hide": self._hide_object,
                 "delete": self._delete_object,
                 "move": self._move_object,
+                "replace_image": self._replace_image,
             }.get(op_type)
             if handler:
                 handler(pdf, op)
@@ -137,6 +139,69 @@ class PdfEditorService:
             except Exception:
                 pass
 
+    def _set_stroke_color(self, pdf: Any, op: dict) -> None:
+        import pikepdf
+
+        color = op.get("color", "")
+        if not color:
+            return
+
+        for page in pdf.pages:
+            if page.Contents is None:
+                continue
+            try:
+                raw = page.Contents.read_bytes()
+                decoded = raw.decode("latin-1")
+                decoded = self._inject_stroke_color(decoded, color)
+                page.Contents = pikepdf.Stream(pdf, decoded.encode("latin-1"))
+            except Exception:
+                pass
+
+    def _replace_image(self, pdf: Any, op: dict) -> None:
+        xobject_name = op.get("xobject_name")
+        image_bytes = op.get("image_bytes")  # pre-loaded by export task
+        if not xobject_name or not image_bytes:
+            return
+
+        try:
+            import io as _io
+
+            import pikepdf
+            from PIL import Image
+
+            img = Image.open(_io.BytesIO(image_bytes)).convert("RGB")
+            jpeg_buf = _io.BytesIO()
+            img.save(jpeg_buf, format="JPEG", quality=90)
+            jpeg_data = jpeg_buf.getvalue()
+            w, h = img.size
+
+            for page in pdf.pages:
+                try:
+                    if "/Resources" not in page:
+                        continue
+                    resources = page["/Resources"]
+                    if "/XObject" not in resources:
+                        continue
+                    xobjects = resources["/XObject"]
+                    key = f"/{xobject_name}"
+                    if key not in xobjects:
+                        continue
+                    new_img = pikepdf.Stream(pdf, jpeg_data)
+                    new_img.stream_dict = pikepdf.Dictionary(
+                        Type=pikepdf.Name("/XObject"),
+                        Subtype=pikepdf.Name("/Image"),
+                        Width=w,
+                        Height=h,
+                        ColorSpace=pikepdf.Name("/DeviceRGB"),
+                        BitsPerComponent=8,
+                        Filter=pikepdf.Name("/DCTDecode"),
+                    )
+                    xobjects[key] = new_img
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
     def _move_object(self, pdf: Any, op: dict) -> None:
         pass
 
@@ -153,6 +218,25 @@ class PdfEditorService:
         for part in parts:
             if re.match(r"\(.*?\)\s*Tj", part) and result:
                 result.insert(len(result) - 1, f"\n{r:.3f} {g:.3f} {b:.3f} rg\n")
+                result.append(part)
+            else:
+                result.append(part)
+        return "".join(result)
+
+    def _inject_stroke_color(self, content: str, color: str) -> str:
+        hex_color = color.lstrip("#")
+        if len(hex_color) != 6:
+            return content
+        r = int(hex_color[0:2], 16) / 255.0
+        g = int(hex_color[2:4], 16) / 255.0
+        b = int(hex_color[4:6], 16) / 255.0
+
+        # Use uppercase RG operator for stroking color
+        parts = re.split(r"(\(.*?\)\s*Tj)", content)
+        result = []
+        for part in parts:
+            if re.match(r"\(.*?\)\s*Tj", part) and result:
+                result.insert(len(result) - 1, f"\n{r:.3f} {g:.3f} {b:.3f} RG\n")
                 result.append(part)
             else:
                 result.append(part)

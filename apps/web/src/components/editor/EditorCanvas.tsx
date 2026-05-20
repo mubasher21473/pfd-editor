@@ -27,6 +27,8 @@ interface DragState {
   startY: number;
   origX: number;
   origY: number;
+  origWidth: number;
+  origHeight: number;
   type: "move" | "resize";
 }
 
@@ -126,6 +128,7 @@ export default function EditorCanvas() {
   const [viewport, setViewport] = useState<ViewportState | null>(null);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
 
   const pageTextObjects = useMemo(
     () => objects.filter((object) => object.page_index === activePageIndex),
@@ -203,20 +206,20 @@ export default function EditorCanvas() {
       startY: e.clientY,
       origX: object.x,
       origY: object.y,
+      origWidth: object.width ?? 0,
+      origHeight: object.height ?? 0,
       type,
     });
+    setDragOffset({ dx: 0, dy: 0 });
   }, []);
 
   useEffect(() => {
     if (!dragState) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!viewport) return;
-      const dx = (e.clientX - dragState.startX) / viewport.scale;
-      const dy = -(e.clientY - dragState.startY) / viewport.scale;
-      const newX = dragState.origX + dx;
-      const newY = dragState.origY + dy;
-
+      const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
+      setDragOffset({ dx, dy });
       setSelectedObjectIds([dragState.objectId]);
     };
 
@@ -224,17 +227,25 @@ export default function EditorCanvas() {
       if (!viewport) return;
       const dx = (e.clientX - dragState.startX) / viewport.scale;
       const dy = -(e.clientY - dragState.startY) / viewport.scale;
-      const newX = dragState.origX + dx;
-      const newY = dragState.origY + dy;
 
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-        addEdit({
-          object_id: dragState.objectId,
-          op: "move",
-          x: newX,
-          y: newY,
-        });
+        if (dragState.type === "move") {
+          addEdit({
+            object_id: dragState.objectId,
+            op: "move",
+            x: dragState.origX + dx,
+            y: dragState.origY + dy,
+          });
+        } else {
+          addEdit({
+            object_id: dragState.objectId,
+            op: "resize",
+            width: Math.max(10 / viewport.scale, dragState.origWidth + dx),
+            height: Math.max(10 / viewport.scale, dragState.origHeight - dy),
+          });
+        }
       }
+      setDragOffset({ dx: 0, dy: 0 });
       setDragState(null);
     };
 
@@ -245,6 +256,21 @@ export default function EditorCanvas() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [dragState, viewport, addEdit, setSelectedObjectIds]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      if (selectedObjectIds.length === 0) return;
+      for (const id of selectedObjectIds) {
+        const obj = objects.find((o) => o.id === id);
+        addEdit({ object_id: id, op: "delete", old_text: obj?.text_content ?? "" });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedObjectIds, objects, addEdit]);
 
   if (!fileUrl) {
     return (
@@ -306,6 +332,8 @@ export default function EditorCanvas() {
               const width = Math.max(object.width * viewport.scale, 10);
               const height = Math.max(object.height * viewport.scale, 10);
               const isDragging = dragState?.objectId === object.id;
+              const isResizing = isDragging && dragState?.type === "resize";
+              const isMoving = isDragging && dragState?.type === "move";
 
               const fontSizePx = Math.max((object.font_size ?? 12) * viewport.scale * 0.75, 8);
 
@@ -314,12 +342,16 @@ export default function EditorCanvas() {
                   key={object.id}
                   className="absolute overflow-hidden rounded-sm"
                   style={{
-                    left: isDragging ? left + (dragState!.startX - dragState!.startX) : left,
-                    top: isDragging ? top - (dragState!.startY - dragState!.startY) : top,
-                    width,
-                    height,
+                    left,
+                    top,
+                    width: isResizing ? Math.max(10, width + dragOffset.dx) : width,
+                    height: isResizing ? Math.max(10, height - dragOffset.dy) : height,
+                    transform: isMoving
+                      ? `translate(${dragOffset.dx}px, ${dragOffset.dy}px)`
+                      : undefined,
                     backgroundColor: object.fill_color ?? "white",
                     cursor: selected ? "move" : "default",
+                    zIndex: isDragging ? 15 : undefined,
                   }}
                   onMouseDown={(e) => {
                     if (selected) {

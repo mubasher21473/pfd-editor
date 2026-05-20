@@ -8,6 +8,30 @@ def _bbox(obj) -> tuple[float, float, float, float]:
     return obj.bbox  # (x0, y0, x1, y1)
 
 
+def _color_to_hex(color: object) -> str | None:
+    """Convert a pdfminer color value to a CSS hex string, or None if not convertible."""
+    if color is None:
+        return None
+    try:
+        if isinstance(color, (int, float)):
+            v = max(0, min(255, int(float(color) * 255)))
+            return f"#{v:02x}{v:02x}{v:02x}"
+        if isinstance(color, (list, tuple)):
+            if len(color) == 3:
+                r, g, b = (max(0, min(255, int(c * 255))) for c in color)
+                return f"#{r:02x}{g:02x}{b:02x}"
+            if len(color) == 4:
+                # CMYK to RGB
+                c_val, m, y, k = (float(x) for x in color)
+                r = max(0, min(255, int((1 - c_val) * (1 - k) * 255)))
+                g = max(0, min(255, int((1 - m) * (1 - k) * 255)))
+                b = max(0, min(255, int((1 - y) * (1 - k) * 255)))
+                return f"#{r:02x}{g:02x}{b:02x}"
+    except Exception:
+        pass
+    return None
+
+
 class PdfParserService:
     def parse(self, pdf_bytes: bytes) -> list[dict]:
         objects: list[dict] = []
@@ -36,7 +60,7 @@ class PdfParserService:
         return objects
 
     def _extract(self, element, page_index: int, objects: list[dict]) -> None:
-        from pdfminer.layout import LTCurve, LTFigure
+        from pdfminer.layout import LTCurve, LTFigure, LTImage
 
         if isinstance(element, LTTextBox):
             text = element.get_text().strip()
@@ -60,8 +84,29 @@ class PdfParserService:
                 "raw_attrs": {},
             })
 
+        elif isinstance(element, LTImage):
+            x0, y0, x1, y1 = _bbox(element)
+            objects.append({
+                "page_index": page_index,
+                "object_type": "image",
+                "stream_index": None,
+                "x": x0,
+                "y": y0,
+                "width": x1 - x0,
+                "height": y1 - y0,
+                "font_name": None,
+                "font_size": None,
+                "text_content": None,
+                "fill_color": None,
+                "stroke_color": None,
+                "raw_attrs": {"xobject_name": element.name},
+            })
+            return  # images have no children
+
         elif isinstance(element, LTCurve):
             x0, y0, x1, y1 = _bbox(element)
+            fill_color = _color_to_hex(getattr(element, "non_stroking_color", None))
+            stroke_color = _color_to_hex(getattr(element, "stroking_color", None))
             objects.append({
                 "page_index": page_index,
                 "object_type": "path",
@@ -73,8 +118,8 @@ class PdfParserService:
                 "font_name": None,
                 "font_size": None,
                 "text_content": None,
-                "fill_color": None,
-                "stroke_color": None,
+                "fill_color": fill_color,
+                "stroke_color": stroke_color,
                 "raw_attrs": {},
             })
 

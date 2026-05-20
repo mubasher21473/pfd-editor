@@ -42,7 +42,22 @@ def export_pdf_task(self, export_id: str) -> str:
             .order_by(EditOperation.applied_at)
         )
         operations = ops_result.scalars().all()
-        op_dicts = [op.operation for op in operations]
+
+        # Build op dicts; pre-load image bytes for replace_image ops so the editor
+        # service can work purely on in-memory data without S3 access.
+        op_dicts = []
+        for op in operations:
+            op_dict = dict(op.operation)
+            if op_dict.get("op") == "replace_image" and isinstance(
+                op_dict.get("image_s3_key"), str
+            ):
+                try:
+                    op_dict["image_bytes"] = storage.download_bytes(
+                        str(op_dict["image_s3_key"])
+                    )
+                except Exception:
+                    pass  # editor will skip ops with missing image_bytes
+            op_dicts.append(op_dict)
 
         output_bytes = editor.apply_operations(pdf_bytes, op_dicts)
 

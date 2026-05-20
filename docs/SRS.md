@@ -62,20 +62,20 @@ FR-3: PDF Rendering in Browser | ✅ `GET /files/{id}/content` streams PDF bytes
 FR-4: Object Tree Retrieval | ✅ `GET /objects/{file_id}` returns typed objects with bbox/font/color | ✅ Objects loaded into store | Done
 FR-5: Text Object Selection | — | ✅ Click-to-select with visual highlight | Done
 FR-6: Inline Text Editing | ✅ `POST /edits/{file_id}` persists replace_text ops | ✅ Double-click → textarea → Apply → optimistic update | Done
-FR-7: Property Panel | — | Requires wiring | **To build**
-FR-8: Color Editing | ✅ `set_fill_color` op schema exists | Requires UI | **To build**
-FR-9: Font Size Editing | ✅ `set_font_size` op schema exists | Requires UI | **To build**
-FR-10: Undo / Redo | — | Store fields exist, need wiring | **To build**
+FR-7: Property Panel | — | ✅ Text, font-size, fill-color controls wired to editorStore | Done
+FR-8: Color Editing | ✅ `set_fill_color` + `set_stroke_color` op schemas | ✅ Fill and stroke color pickers in Property Panel | Done
+FR-9: Font Size Editing | ✅ `set_font_size` op schema | ✅ Font size input in Property Panel | Done
+FR-10: Undo / Redo | — | ✅ 50-step snapshot history in editorStore | Done
 FR-11: Export Modified PDF | ✅ `POST /export/{file_id}` → Celery task → pikepdf replay → download URL | ✅ Export button + poll + download link | Done
-FR-12: Move / Resize Objects | ✅ `move` op, `resize` op schemas exist | Requires drag handles | **To build**
+FR-12: Move / Resize Objects | ✅ `move` + `resize` op schemas | ✅ Drag-to-move with real-time offset, resize handle | Done
 
 ### Should-Have (P1)
 
-- FR-13: Image object replacement
-- FR-14: Path object color editing (fill + stroke)
-- FR-15: Object deletion / hiding
-- FR-16: Bulk edit (select multiple objects → apply color/position change)
-- FR-17: Search/filter objects by text content
+- FR-13: Image object replacement — ✅ `POST /objects/{file_id}/upload-image` + `replace_image` pikepdf op
+- FR-14: Path object color editing (fill + stroke) — ✅ `set_fill_color` + `set_stroke_color` ops, parser extracts path colors
+- FR-15: Object deletion / hiding — ✅ `delete` op + Delete key + Delete button in Property Panel
+- FR-16: Bulk edit (select multiple objects → apply color/position change) — ✅ "Apply fill to all" in Property Panel
+- FR-17: Search/filter objects by text content — ✅ Search input in Filter Panel
 
 ### Nice-to-Have (P2)
 

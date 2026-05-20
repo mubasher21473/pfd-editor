@@ -12,23 +12,38 @@ Everything outside this flow is intentionally excluded from this plan.
 
 ## Current State
 
-The codebase already has the right folders and placeholders, but the product flow is not implemented yet.
+The full upload→parse→inspect→edit→export pipeline is working end-to-end.
 
 Backend current state:
 
-- `POST /api/v1/files/upload` returns the uploaded filename only.
-- `GET /api/v1/files` returns an empty list.
-- `DELETE /api/v1/files/{file_id}` returns the input id only.
-- `GET /api/v1/objects/{file_id}` returns an empty object list.
-- `POST /api/v1/edits/{file_id}` returns a placeholder job id.
-- `POST /api/v1/export/{file_id}` returns an example download URL.
-- Parser, editor, exporter, storage, and Celery tasks are stubs.
+- `POST /api/v1/files/upload` validates PDF header + size, persists `PdfFile` row, uploads to MinIO, enqueues Celery parse task.
+- `GET /api/v1/files` returns all files for the authenticated user from the database.
+- `DELETE /api/v1/files/{file_id}` deletes the database row and removes the file from storage.
+- `GET /api/v1/files/{id}/content` streams the raw PDF bytes from MinIO.
+- Parse Celery task downloads PDF from storage, extracts text objects (bbox, font, color) via pdfminer.six, and extracts path colors (fill + stroke) and image XObject names. Persists `PdfObject` rows, updates `parse_status`.
+- `GET /api/v1/objects/{file_id}` returns the full typed object tree (text, path, image) with bbox, font, fill/stroke color, and raw_attrs.
+- `POST /api/v1/objects/{file_id}/upload-image` accepts a multipart image upload and stores it in MinIO for later use in a `replace_image` op.
+- `POST /api/v1/edits/{file_id}` validates and persists `BulkEditIn` operations: `replace_text`, `set_font_size`, `set_fill_color`, `set_stroke_color`, `move`, `resize`, `hide`, `delete`, `replace_image`.
+- `POST /api/v1/export/{file_id}` creates an `Export` row and enqueues Celery export task.
+- Export Celery task replays edit operations through `PdfEditorService` (pikepdf), pre-loads replacement image bytes for `replace_image` ops, uploads output PDF, returns a presigned download URL.
 
 Frontend current state:
 
-- Dashboard only shows a static drop zone.
-- Editor page only shows placeholder panels.
-- PDF rendering, object overlays, selection, property editing, save/apply, and export are not wired.
+- Dashboard: drag-drop upload with progress, file list with parse-status polling, delete action.
+- Editor loads file metadata + parsed objects and sets up the PDF.js canvas render.
+- PDF.js renders the active page with zoom and page navigation controls.
+- Parsed objects (text, path, image) render as interactive overlays on top of the canvas.
+- Click selects an object; double-click opens inline text editing.
+- Selected objects can be dragged to move (real-time visual feedback) or resized via a corner handle.
+- Keyboard Delete/Backspace deletes all selected objects.
+- Property Panel shows text, font-size, fill-color, stroke-color (path/image), and image-replacement controls for the selected object. Multi-select shows bulk fill-color change.
+- Toolbar: undo/redo (50-step history), Save (posts pending edits to API), Export (polls status, shows Download link).
+
+What is not yet implemented:
+
+- Auth hardening: real JWT lookup (dev bypass is still active).
+- Stripe billing and subscription tier enforcement.
+- Landing page, onboarding flow, and deployment pipeline.
 
 ## Feature Flow
 
