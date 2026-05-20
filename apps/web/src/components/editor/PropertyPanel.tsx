@@ -72,7 +72,8 @@ export default function PropertyPanel() {
 
   const handleDelete = useCallback(() => {
     if (!obj) return;
-    addEdit({ object_id: obj.id, op: "delete", old_text: obj.text_content ?? "" });
+    const extra = obj.object_type === "text" ? { old_text: obj.text_content ?? "" } : {};
+    addEdit({ object_id: obj.id, op: "delete", ...extra });
     setSelectedObjectIds([]);
   }, [obj, addEdit, setSelectedObjectIds]);
 

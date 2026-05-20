@@ -164,13 +164,13 @@ class PdfEditorService:
             return
 
         try:
-            import io as _io
+            import io
 
             import pikepdf
             from PIL import Image
 
-            img = Image.open(_io.BytesIO(image_bytes)).convert("RGB")
-            jpeg_buf = _io.BytesIO()
+            img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            jpeg_buf = io.BytesIO()
             img.save(jpeg_buf, format="JPEG", quality=90)
             jpeg_data = jpeg_buf.getvalue()
             w, h = img.size

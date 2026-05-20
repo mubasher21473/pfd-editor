@@ -265,7 +265,8 @@ export default function EditorCanvas() {
       if (selectedObjectIds.length === 0) return;
       for (const id of selectedObjectIds) {
         const obj = objects.find((o) => o.id === id);
-        addEdit({ object_id: id, op: "delete", old_text: obj?.text_content ?? "" });
+        const extra = obj?.object_type === "text" ? { old_text: obj.text_content ?? "" } : {};
+        addEdit({ object_id: id, op: "delete", ...extra });
       }
     };
     window.addEventListener("keydown", handleKeyDown);

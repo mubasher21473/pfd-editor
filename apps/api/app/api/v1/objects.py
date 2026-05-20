@@ -17,6 +17,7 @@ ALLOWED_IMAGE_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/gif",
     "image/webp", "image/bmp", "image/tiff",
 }
+_ALLOWED_IMAGE_TYPES_STR = ", ".join(sorted(ALLOWED_IMAGE_TYPES))
 
 
 @router.get("/{file_id}")
@@ -114,8 +115,7 @@ async def upload_replacement_image(
     if content_type not in ALLOWED_IMAGE_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported image type '{content_type}'. "
-                   f"Allowed: {', '.join(sorted(ALLOWED_IMAGE_TYPES))}",
+            detail=f"Unsupported image type '{content_type}'. Allowed: {_ALLOWED_IMAGE_TYPES_STR}",
         )
 
     content = await file.read()

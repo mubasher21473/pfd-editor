@@ -22,8 +22,8 @@ def _color_to_hex(color: object) -> str | None:
                 return f"#{r:02x}{g:02x}{b:02x}"
             if len(color) == 4:
                 # CMYK to RGB
-                c_val, m, y, k = (float(x) for x in color)
-                r = max(0, min(255, int((1 - c_val) * (1 - k) * 255)))
+                c, m, y, k = (float(x) for x in color)
+                r = max(0, min(255, int((1 - c) * (1 - k) * 255)))
                 g = max(0, min(255, int((1 - m) * (1 - k) * 255)))
                 b = max(0, min(255, int((1 - y) * (1 - k) * 255)))
                 return f"#{r:02x}{g:02x}{b:02x}"
