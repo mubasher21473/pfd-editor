@@ -1,6 +1,7 @@
 export function usePdfRenderer() {
   return {
-    renderPage: async (_page: number) => {
+    renderPage: async (pageNumber: number) => {
+      void pageNumber;
       return true;
     }
   };

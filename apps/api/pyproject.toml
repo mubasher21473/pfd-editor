@@ -10,7 +10,13 @@ strict = true
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["app.tasks.*", "app.db.migrations.*", "app.config", "app.core.security"]
+module = [
+    "app.tasks.*",
+    "app.db.migrations.*",
+    "app.config",
+    "app.core.security",
+    "app.services.stripe_service",
+]
 ignore_errors = true
 
 [tool.pytest.ini_options]
